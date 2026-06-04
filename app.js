@@ -294,7 +294,7 @@ function setupEvents() {
         },
         err => {
           document.getElementById('toast').className = 'toast';
-          const msgs = { 1: 'Permissão de localização negada.', 2: 'Localização indisponível.', 3: 'Tempo esgotado a obter localização.' };
+          const msgs = { 1: 'Permissão negada. Verifica as definições do browser.', 2: 'Localização indisponível.', 3: 'Tempo esgotado.' };
           showToast(msgs[err.code] || 'Erro ao obter localização.', 'error');
         },
         { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
