@@ -79,7 +79,7 @@ async function fetchPlaceData(query) {
         generationConfig: { maxOutputTokens: 1024 }
       })
     });
-    if(!geminiRes.ok) throw new Error('Erro na API do Gemini');
+    if(!geminiRes.ok) { const errData = await geminiRes.json(); throw new Error(errData.error?.message || geminiRes.status); }
 
     const geminiData = await geminiRes.json();
     const rawText = geminiData.candidates[0].content.parts[0].text.trim();
