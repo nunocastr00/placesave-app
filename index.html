@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PlaceSave">
+  <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVHhe7cExAQAAAMKg9U9tCF8gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADhqAS0AAAEf3P9bAAAAAElFTkSuQmCC">
+  <link rel="manifest" href="./manifest.json">
+  <title>PlaceSave</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+
+  <style>
+    /* Design Premium iOS (OLED Black, Serif Headers, Text-only Cards) */
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --bg: #000000;
+      --surface: #111111;
+      --surface-light: #1C1C1E;
+      --text: #FFFFFF;
+      --muted: #8E8E93;
+      --primary: #FFFFFF;
+      --primary-text: #000000;
+      --danger: #FF453A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overscroll-behavior: none;
+    }
+
+    /* Tipografia Serif para Títulos */
+    h2, h3, .serif { font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; }
+
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg);
+      padding: calc(var(--safe-top) + 20px) 16px 8px;
+    }
+    
+    #header-title { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 16px; }
+
+    .search-bar {
+      display: flex; align-items: center; background: var(--surface-light);
+      border-radius: 12px; padding: 10px 14px; margin-bottom: 16px;
+    }
+    .search-bar i { color: var(--muted); font-size: 18px; }
+    .search-bar input {
+      border: none; background: transparent; color: var(--text); outline: none; width: 100%; margin-left: 10px; font-size: 16px;
+    }
+
+    main {
+      flex: 1; position: relative; overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch; padding-bottom: 20px;
+    }
+    .tab-content { display: none; height: 100%; }
+    .tab-content.active { display: block; }
+    
+    .map-filters {
+      display: flex; gap: 16px; overflow-x: auto; padding: 0 16px 16px; -webkit-overflow-scrolling: touch;
+    }
+    .map-filters::-webkit-scrollbar { display: none; }
+    
+    .cat-block {
+      display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+    }
+    .cat-icon-bg {
+      width: 56px; height: 56px; background: var(--surface-light); border-radius: 16px;
+      display: flex; justify-content: center; align-items: center; font-size: 24px;
+      border: 2px solid transparent; transition: all 0.2s ease;
+    }
+    .cat-block.active .cat-icon-bg { border-color: var(--primary); }
+    .cat-block span { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .cat-block.active span { color: var(--text); }
+
+    /* Grelha Elegante (Apenas Texto) */
+    .list-controls { padding: 0 16px 12px; display: flex; justify-content: space-between; align-items: center; }
+    .list-controls span { font-size: 18px; font-weight: 700; font-family: ui-serif, Georgia, serif; }
+    
+    .list-container { 
+      padding: 0 16px 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; 
+    }
+    
+    .card-wrapper {
+      position: relative; border-radius: 20px; background: var(--danger); overflow: hidden;
+      aspect-ratio: 1 / 1.15; /* Proporção tipo Widget */
+    }
+    .delete-btn-bg {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 100%;
+      display: flex; align-items: center; justify-content: flex-end; padding-right: 20px;
+      color: white; font-weight: bold; font-size: 24px;
+    }
+    
+    .place-card {
+      position: absolute; inset: 0; background: var(--surface-light);
+      border-radius: 20px; transition: transform 0.2s ease;
+      display: flex; flex-direction: column;
+      padding: 16px; border: 1px solid rgba(255,255,255,0.06);
+    }
+    
+    .card-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: auto;}
+    .card-cat { font-size: 12px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .card-cat i { font-size: 14px; font-style: normal; }
+    
+    .card-title { font-size: 20px; font-weight: 700; line-height: 1.1; margin-bottom: 6px; color: var(--text); }
+    .card-desc { font-size: 13px; color: rgba(255,255,255,0.5); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3;}
+    
+    .card-footer {
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.9);
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 12px;
+    }
+    
+    footer {
+      position: sticky; bottom: 0; z-index: 10;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+      padding: 12px 16px calc(var(--safe-bottom) + 12px);
+      display: flex; justify-content: space-around;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .tab-btn {
+      background: transparent; border: none; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; font-size: 26px;
+    }
+    .tab-btn.active { color: var(--text); }
+
+    .overlay {
+      position: absolute; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.7); display: none; justify-content: flex-end; flex-direction: column;
+    }
+    .bottom-sheet {
+      background: var(--surface); border-radius: 24px 24px 0 0;
+      padding: 0 0 calc(var(--safe-bottom) + 16px);
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.1, 0.8, 0.2, 1);
+      max-height: 92%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      position: relative;
+    }
+    .overlay.open { display: flex; }
+    .overlay.open .bottom-sheet { transform: translateY(0); }
+    
+    .sheet-handle { 
+      width: 36px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; 
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 10;
+    }
+    
+    .detail-body { padding: 40px 24px 0; }
+    
+    .pill { font-size: 13px; padding: 8px 14px; border-radius: 100px; background: var(--surface-light); color: var(--text); display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.05);}
+    
+    .btn { padding: 16px; border-radius: 16px; border: none; font-size: 16px; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;}
+    .btn-primary { background: var(--primary); color: var(--primary-text); }
+    .btn-secondary { background: var(--surface-light); color: var(--text); }
+    .btn-danger { background: rgba(255,69,58,0.1); color: var(--danger); margin-top: 24px; }
+
+    .fab {
+      position: absolute; bottom: 16px; right: 16px; z-index: 9;
+      width: 56px; height: 56px; border-radius: 28px; background: var(--primary);
+      color: var(--primary-text); border: none; font-size: 24px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 16px rgba(255,255,255,0.15);
+    }
+
+    #map-container { width: 100%; height: 100%; border-radius: 24px; }
+    
+    .input-group input { padding: 16px; border-radius: 12px; border: none; background: var(--surface-light); color: var(--text); font-size: 16px; outline: none; width: 100%; margin-bottom: 20px;}
+    
+    .toast {
+      position: absolute; top: calc(var(--safe-top) + 10px); left: 16px; right: 16px;
+      padding: 14px 16px; border-radius: 12px; font-weight: 500; color: white; z-index: 200;
+      text-align: center; transform: translateY(-100px); transition: transform 0.3s;
+      background: var(--surface-light); border: 1px solid rgba(255,255,255,0.1);
+    }
+    .toast.show { transform: translateY(0); }
+    .toast.error { background: var(--danger); }
+    
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); display: none; }
+    .empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+
+    .leaflet-popup-content-wrapper { background: var(--surface-light); color: var(--text); border-radius: 16px; }
+    .leaflet-popup-tip { background: var(--surface-light); }
+    
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h2 id="header-title">Library</h2>
+    <div class="search-bar" id="search-container">
+      <i class="ti ti-search"></i>
+      <input type="text" id="search-input" placeholder="Find places, cities, tags...">
+    </div>
+    
+    <div class="map-filters" id="category-filters"></div>
+  </header>
+
+  <main id="main-area">
+    <div id="toast" class="toast"></div>
+
+    <div id="tab-list" class="tab-content active">
+      <div class="list-controls">
+        <span>Recently saved</span>
+        <button id="btn-sort-dist" class="pill" style="border:none; padding:6px 12px; background: transparent;">
+          <i class="ti ti-location"></i> Distância
+        </button>
+      </div>
+
+      <div id="empty-state" class="empty-state">
+        <i class="ti ti-folder"></i>
+        <p style="font-weight:600; color:white; margin-bottom:8px;">No places yet</p>
+        <p style="font-size:14px;">Start adding places to organize your saves.</p>
+      </div>
+      
+      <div class="list-container" id="places-list"></div>
+      
+      <button class="fab" id="fab-add"><i class="ti ti-plus"></i></button>
+    </div>
+
+    <div id="tab-map" class="tab-content" style="padding: 0 16px;">
+      <div id="map-container"></div>
+      <button class="fab" id="fab-location" style="bottom: 16px; right: 32px;"><i class="ti ti-current-location"></i></button>
+    </div>
+
+    <div id="tab-stats" class="tab-content" style="padding: 0 16px;">
+      <div id="stats-view"></div>
+    </div>
+
+    <input type="file" id="backup-input" accept=".json" style="display: none;">
+
+    <div id="modal-add" class="overlay">
+      <div class="bottom-sheet" style="padding: 24px;">
+        <div class="sheet-handle"></div>
+        <h3 class="serif" style="margin-bottom: 8px; font-size:26px; margin-top:20px;">New Place</h3>
+        <p class="muted" style="margin-bottom: 24px; font-size: 14px;">Type the name and let AI fill the details.</p>
+        <div class="input-group">
+          <input type="text" id="input-place-name" placeholder="e.g. Dogue do Marquês, Lisboa">
+        </div>
+        <button class="btn btn-primary" id="btn-save">Save to Library</button>
+        <button class="btn btn-secondary" id="btn-cancel-add" style="margin-top:12px;">Cancel</button>
+      </div>
+    </div>
+
+    <div id="modal-detail" class="overlay">
+      <div class="bottom-sheet" id="detail-content">
+        </div>
+    </div>
+  </main>
+
+  <footer>
+    <button class="tab-btn active" data-tab="list"><i class="ti ti-home"></i></button>
+    <button class="tab-btn" data-tab="map"><i class="ti ti-world"></i></button>
+    <button class="tab-btn" data-tab="stats"><i class="ti ti-chart-bar"></i></button>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="./app.js"></script>
+</body>
+</html>
