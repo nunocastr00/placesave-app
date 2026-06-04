@@ -68,7 +68,7 @@ window.exportBackup = () => {
 async function fetchPlaceData(query) {
   showToast(`A pesquisar '${query}'...`, 'loading', 0);
   try {
-    const GEMINI_API_KEY = AIzaSyBqYOg46E1_TeH2ggkn7RZHiBvwCTeVFIc;
+    const GEMINI_API_KEY = 'AIzaSyBqYOg46E1_TeH2ggkn7RZHiBvwCTeVFIc';
     const prompt = `Pesquisa informação sobre este lugar: "${query}"\n\nResponde APENAS com um objeto JSON válido, sem texto antes ou depois, sem backticks.\nFormato exato:\n{\n  "name": "nome oficial do lugar",\n  "category": "Restaurant | Café | Bar | Museum | Hotel | Shop | Park | Tasco | Chique | Other",\n  "city": "cidade",\n  "country": "país",\n  "description": "1-2 frases descritivas sobre o lugar",\n  "what_they_sell": "descrição curta do que vendem/oferecem (comida, produtos, experiência)",\n  "price_range": "€ | €€ | €€€ | €€€€",\n  "price_description": "ex: pratos entre 8€-15€ | entrada gratuita | produtos a partir de 20€",\n  "tags": ["tag1", "tag2", "tag3"],\n  "opening_hours": "ex: Seg-Sex 12h-23h, Sab-Dom 10h-24h | Desconhecido",\n  "website": "URL oficial ou null",\n  "rating": número de 1 a 5,\n  "nominatim_query": "query otimizada para pesquisar este lugar na API Nominatim"\n}`;
 
     const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -330,7 +330,6 @@ function setupEvents() {
   const detailSheet = document.getElementById('detail-content');
   let sheetStartY = 0, sheetCurrentY = 0, sheetDragging = false;
   detailSheet.addEventListener('touchstart', e => {
-    // Só arranca o gesto se o toque começa na zona do handle (topo 60px) ou se o scroll interno já está no topo
     const touchY = e.touches[0].clientY;
     const rect = detailSheet.getBoundingClientRect();
     const relY = touchY - rect.top;
@@ -379,5 +378,4 @@ function setupEvents() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', init);
 document.addEventListener('DOMContentLoaded', init);
