@@ -71,7 +71,7 @@ async function fetchPlaceData(query) {
     const GEMINI_API_KEY = 'AQ.Ab8RN6K2_DQQhUdVaecBWerSYAlY5UjToazYms3a5AHEGC8IgA';
     const prompt = `Pesquisa informação sobre este lugar: "${query}"\n\nResponde APENAS com um objeto JSON válido, sem texto antes ou depois, sem backticks.\nFormato exato:\n{\n  "name": "nome oficial do lugar",\n  "category": "Restaurant | Café | Bar | Museum | Hotel | Shop | Park | Tasco | Chique | Other",\n  "city": "cidade",\n  "country": "país",\n  "description": "1-2 frases descritivas sobre o lugar",\n  "what_they_sell": "descrição curta do que vendem/oferecem (comida, produtos, experiência)",\n  "price_range": "€ | €€ | €€€ | €€€€",\n  "price_description": "ex: pratos entre 8€-15€ | entrada gratuita | produtos a partir de 20€",\n  "tags": ["tag1", "tag2", "tag3"],\n  "opening_hours": "ex: Seg-Sex 12h-23h, Sab-Dom 10h-24h | Desconhecido",\n  "website": "URL oficial ou null",\n  "rating": número de 1 a 5,\n  "nominatim_query": "query otimizada para pesquisar este lugar na API Nominatim"\n}`;
 
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -79,7 +79,7 @@ async function fetchPlaceData(query) {
         generationConfig: { maxOutputTokens: 1024 }
       })
     });
-    if(!geminiRes.ok) { const errData = await geminiRes.json(); throw new Error(errData.error?.message || geminiRes.status); }
+    if(!geminiRes.ok) { const errData = await geminiRes.json(); throw new Error(errData.error?.message || 'Erro na API do Gemini'); }
 
     const geminiData = await geminiRes.json();
     const rawText = geminiData.candidates[0].content.parts[0].text.trim();
